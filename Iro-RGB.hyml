@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IroGuessr RGB</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            width: 90%;
+            max-width: 700px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .color-panel {
+            width: 100%;
+            height: 200px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+        
+        button {
+            padding: 12px 30px;
+            background: #f5576c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #e04357;
+        }
+        
+        .result {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 50px;
+            font-weight: bold;
+        }
+        
+        .result.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .result.close {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .result.wrong {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .result-color-panel {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .color-bars {
+            display: none;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .color-bar {
+            flex: 1;
+            height: 80px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .color-bar-label {
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .color-bar-value {
+            font-size: 20px;
+        }
+        
+        .hint {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 IroGuessr RGB</h1>
+        
+        <div class="color-panel" id="colorPanel"></div>
+        
+        <div class="instructions" id="instructions">
+            Enterキー:解答する　Escキー:答えを表示
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="inputField" placeholder="R,G,B (例: 120,200,80)" autocomplete="off">
+            <button onclick="checkAnswer()">解答する</button>
+        </div>
+        
+        <div class="hint">
+            R(赤): 0-255, G(緑): 0-255, B(青): 0-255
+        </div>
+        
+        <div class="result" id="resultLabel"></div>
+        
+        <div class="result-color-panel" id="resultColorPanel"></div>
+        
+        <div class="color-bars" id="colorBars">
+            <div class="color-bar" id="redBar">
+                <div class="color-bar-label">R (赤)</div>
+                <div class="color-bar-value" id="redValue">0</div>
+            </div>
+            <div class="color-bar" id="greenBar">
+                <div class="color-bar-label">G (緑)</div>
+                <div class="color-bar-value" id="greenValue">0</div>
+            </div>
+            <div class="color-bar" id="blueBar">
+                <div class="color-bar-label">B (青)</div>
+                <div class="color-bar-value" id="blueValue">0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let red, green, blue;
+        let attemptCount = 0;
+        let isAnswered = false;
+
+        const colorPanel = document.getElementById('colorPanel');
+        const resultColorPanel = document.getElementById('resultColorPanel');
+        const inputField = document.getElementById('inputField');
+        const resultLabel = document.getElementById('resultLabel');
+        const instructions = document.getElementById('instructions');
+        const colorBars = document.getElementById('colorBars');
+        const redBar = document.getElementById('redBar');
+        const greenBar = document.getElementById('greenBar');
+        const blueBar = document.getElementById('blueBar');
+        const redValue = document.getElementById('redValue');
+        const greenValue = document.getElementById('greenValue');
+        const blueValue = document.getElementById('blueValue');
+
+        function generateRandomColor() {
+            red = Math.floor(Math.random() * 256);
+            green = Math.floor(Math.random() * 256);
+            blue = Math.floor(Math.random() * 256);
+            attemptCount = 0;
+            isAnswered = false;
+            
+            colorPanel.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+            resultLabel.textContent = '';
+            resultLabel.className = 'result';
+            resultColorPanel.style.backgroundColor = 'white';
+            inputField.value = '';
+            instructions.textContent = 'Enterキー:解答する　Escキー:答えを表示';
+            colorBars.style.display = 'none';
+            inputField.focus();
+        }
+
+        function checkAnswer() {
+            if (isAnswered) {
+                generateRandomColor();
+                return;
+            }
+            
+            const input = inputField.value.trim();
+            const match = input.match(/^(\d{1,3}),(\d{1,3}),(\d{1,3})$/);
+            
+            if (!match) {
+                resultLabel.textContent = 'R,G,Bをカンマ区切りで入力してください。';
+                resultLabel.className = 'result wrong';
+                return;
+            }
+            
+            const inputRed = parseInt(match[1]);
+            const inputGreen = parseInt(match[2]);
+            const inputBlue = parseInt(match[3]);
+            
+            if (inputRed > 255 || inputGreen > 255 || inputBlue > 255) {
+                resultLabel.textContent = '値の範囲が正しくありません(0-255)。';
+                resultLabel.className = 'result wrong';
+                return;
+            }
+            
+            attemptCount++;
+            
+            const redDiff = Math.abs(red - inputRed);
+            const greenDiff = Math.abs(green - inputGreen);
+            const blueDiff = Math.abs(blue - inputBlue);
+            
+            resultColorPanel.style.backgroundColor = `rgb(${inputRed}, ${inputGreen}, ${inputBlue})`;
+            
+            if (redDiff <= 5 && greenDiff <= 5 && blueDiff <= 5) {
+                resultLabel.innerHTML = `🎉 正解!<br>R:${red} G:${green} B:${blue}<br>解答回数:${attemptCount}回`;
+                resultLabel.className = 'result correct';
+                isAnswered = true;
+                instructions.textContent = 'Enterキー:次の問題へ';
+                showColorBars();
+            } else if (redDiff <= 15 && greenDiff <= 15 && blueDiff <= 15) {
+                resultLabel.textContent = '😊 惜しい!';
+                resultLabel.className = 'result close';
+            } else {
+                resultLabel.textContent = '❌ 違います!';
+                resultLabel.className = 'result wrong';
+            }
+        }
+
+        function showAnswer() {
+            resultLabel.innerHTML = `R:${red} G:${green} B:${blue}`;
+            resultLabel.className = 'result info';
+            isAnswered = true;
+            instructions.textContent = 'Enterキー:次の問題へ';
+            showColorBars();
+        }
+
+        function showColorBars() {
+            redValue.textContent = red;
+            greenValue.textContent = green;
+            blueValue.textContent = blue;
+            
+            redBar.style.backgroundColor = `rgb(${red}, 0, 0)`;
+            greenBar.style.backgroundColor = `rgb(0, ${green}, 0)`;
+            blueBar.style.backgroundColor = `rgb(0, 0, ${blue})`;
+            
+            colorBars.style.display = 'flex';
+        }
+
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                showAnswer();
+            } else if (e.key === 'Enter') {
+                if (isAnswered) {
+                    generateRandomColor();
+                } else {
+                    checkAnswer();
+                }
+            }
+        });
+
+        // 初期化
+        generateRandomColor();
+    </script>
+</body>
+</html>
